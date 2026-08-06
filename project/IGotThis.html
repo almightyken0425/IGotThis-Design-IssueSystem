@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>IGotThis — 工單系統</title>
+
+  <style>
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      /* 靜態 HTML 讀不到 token，此處鏡射 THEME_LIGHT.text.primary（sand[900]）。 */
+      color: #252118;
+    }
+    * { box-sizing: border-box; }
+    ::-webkit-scrollbar { display: none; }
+    button:active { transform: scale(0.97); }
+    button { transition: transform 80ms ease, background 150ms; }
+    @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+  </style>
+
+  <template id="__bundler_thumbnail">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <!-- 底 = sand[100] 畫布底、方塊 = pine[800] 主色種子，鏡射 no1_atomic_tokens.jsx。 -->
+      <rect width="100" height="100" fill="#F0EDE5"/>
+      <rect x="22" y="22" width="56" height="56" rx="12" fill="#004643"/>
+      <text x="50" y="58" font-family="system-ui,sans-serif" font-weight="700" font-size="22" fill="#fff" text-anchor="middle">IG</text>
+    </svg>
+  </template>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Workbench infrastructure (design canvas) -->
+  <script type="text/babel" src="90_workbench/design-canvas.jsx"></script>
+
+  <!-- Foundations atomic 層（嚴格依序：atomic → typography → layout） -->
+  <script type="text/babel" src="10_foundations/no1_atomic_tokens.jsx"></script>
+  <script type="text/babel" src="10_foundations/no2_typography.jsx"></script>
+  <script type="text/babel" src="10_foundations/no3_layout_tokens.jsx"></script>
+
+  <!-- Visualizers · shared kit 必須先於各 leaf visualizer -->
+  <script type="text/babel" src="10_foundations/visualizers/no0_shared_card_kit.jsx"></script>
+  <script type="text/babel" src="10_foundations/visualizers/no1_colors_visualizer.jsx"></script>
+  <script type="text/babel" src="10_foundations/visualizers/no2_type_visualizer.jsx"></script>
+  <script type="text/babel" src="10_foundations/visualizers/no3_layout_visualizer.jsx"></script>
+
+  <!-- Tab content modules -->
+  <script type="text/babel" src="00_intro/intro.jsx"></script>
+
+  <!-- Explorations · 多版本提案主題（決策前隔離，選定後才回寫 Foundations） -->
+  <script type="text/babel" src="50_explorations/no1_color_directions/no1_color_directions.jsx"></script>
+
+  <!-- App entry (router + view tabs) -->
+  <script type="text/babel" src="90_workbench/app.jsx"></script>
+</body>
+</html>
