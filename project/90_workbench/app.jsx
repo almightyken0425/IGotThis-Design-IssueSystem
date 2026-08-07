@@ -1,19 +1,26 @@
 // ─────────────────────────────────────────────────────────────
 // App shell · 設計工作台 router
 //
-// 頂部 3 個 tab：#intro / #foundations / #explorations
+// 頂部 4 個 tab：#intro / #foundations / #screens / #explorations
 //
-// Foundations 與 Explorations 皆分 group（hash 三段式：#<view>/<group>/<topic>）：
-//   group 與各 group 的 leaf 清單以下方 FOUNDATIONS_GROUPS /
-//   EXPLORATION_GROUPS 常數為唯一真相。
+// Foundations、Screens 與 Explorations 皆分 group（hash 三段式：
+// #<view>/<group>/<topic>）：group 與各 group 的 leaf 清單以下方
+// FOUNDATIONS_GROUPS / SCREEN_GROUPS / EXPLORATION_GROUPS 常數為唯一真相。
 //
-// 機制沿用 SuSuGiGi design canvas 的 router；本版尚無 Screens tab，
-// 未來擴充時照參照 repo 把 SCREEN_META / SCREEN_GROUPS 加回來。
+// Screens 的一個 leaf = 一個畫面 = 一個 Section component。畫面的 variant
+// 不佔 leaf：由該畫面自身的 section 以 family 並陳，或由畫面內建的切換件
+// （LevelSwitcher、Select、排序標題列）現場切。
+//
+// 機制沿用 SuSuGiGi design canvas 的 router。該 repo 的 Screens 走
+// SCREEN_META + ScreenFrame 的裝置殼二層路由，是因為記帳 App 為 iOS 手機殼、
+// 需要 NavBar 與 modal / push 呈現；本 repo 為桌面瀏覽器工具、無裝置殼，
+// 故 Screens 直接沿用與 Foundations 同一套 group / topic 結構，不引入 SCREEN_META。
 // ─────────────────────────────────────────────────────────────
 
 const VIEW_TABS = [
   { id: 'intro',        label: 'Intro' },
   { id: 'foundations',  label: 'Foundations',  hasSubs: true },
+  { id: 'screens',      label: 'Screens',      hasSubs: true },
   { id: 'explorations', label: 'Explorations', hasSubs: true },
 ];
 const VALID_VIEWS = VIEW_TABS.map(t => t.id);
@@ -27,6 +34,29 @@ const FOUNDATIONS_GROUPS = [
       { id: 'colors', label: 'Colors', render: () => <FoundationsAtomicColorsSection/> },
       { id: 'type',   label: 'Type',   render: () => <FoundationsAtomicTypeSection/> },
       { id: 'layout', label: 'Layout', render: () => <FoundationsAtomicLayoutSection/> },
+    ],
+  },
+  {
+    id: 'components', label: 'Components',
+    topics: [
+      { id: 'controls',     label: 'Controls',     render: () => <ComponentsControlsSection/> },
+      { id: 'data-display', label: 'Data Display', render: () => <ComponentsDataDisplaySection/> },
+      { id: 'gantt-nav',    label: 'Gantt & Nav',  render: () => <ComponentsGanttNavSection/> },
+    ],
+  },
+];
+
+// SCREEN_GROUPS — Screens TOC 單一真相。一個 topic 對應一個畫面的 Section
+// component，實體檔在 30_screens/ 各 noN_<name>_screen/ 子目錄。
+// 邊界狀態（空 / 拖曳中 / 權限濾除 / 層級切換）不在此列：那是畫面自身
+// section 內的 family 與 artboard，或畫面內建切換件的職責。
+const SCREEN_GROUPS = [
+  {
+    id: 'work-views', label: 'Work Views',
+    topics: [
+      { id: 'list',      label: 'List · 清單表格',   render: () => <ScreenListSection/> },
+      { id: 'kanban',    label: 'Kanban · 工單看板', render: () => <ScreenKanbanSection/> },
+      { id: 'dev-order', label: 'Dev Order · 開發順序表', render: () => <ScreenDevOrderSection/> },
     ],
   },
 ];
@@ -45,6 +75,7 @@ const EXPLORATION_GROUPS = [
 // 依 view 取 group 清單；無 group 結構的 view 回 null。
 const groupsFor = (view) =>
   view === 'foundations'  ? FOUNDATIONS_GROUPS :
+  view === 'screens'      ? SCREEN_GROUPS :
   view === 'explorations' ? EXPLORATION_GROUPS :
   null;
 
@@ -137,6 +168,7 @@ function SideTOC({ route, onNavigate }) {
   const [expandedGroups, setExpandedGroups] = React.useState(() => {
     const init = {};
     FOUNDATIONS_GROUPS.forEach(g => { init[g.id] = view === 'foundations' && g.id === activeGroup; });
+    SCREEN_GROUPS.forEach(g => { init[g.id] = view === 'screens' && g.id === activeGroup; });
     EXPLORATION_GROUPS.forEach(g => { init[g.id] = view === 'explorations' && g.id === activeGroup; });
     return init;
   });
@@ -256,6 +288,6 @@ function App() {
   );
 }
 
-Object.assign(window, { FOUNDATIONS_GROUPS, EXPLORATION_GROUPS });
+Object.assign(window, { FOUNDATIONS_GROUPS, SCREEN_GROUPS, EXPLORATION_GROUPS });
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);

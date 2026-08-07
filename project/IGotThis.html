@@ -44,6 +44,16 @@
   <script type="text/babel" src="10_foundations/no2_typography.jsx"></script>
   <script type="text/babel" src="10_foundations/no3_layout_tokens.jsx"></script>
 
+  <!-- Component tokens · 必須在 atomic 層之後、20_components 之前 -->
+  <script type="text/babel" src="10_foundations/component_tokens/no1_control_tokens.jsx"></script>
+  <script type="text/babel" src="10_foundations/component_tokens/no2_data_display_tokens.jsx"></script>
+  <script type="text/babel" src="10_foundations/component_tokens/no3_gantt_tokens.jsx"></script>
+
+  <!-- Components · 消費 atomic 層與 component tokens -->
+  <script type="text/babel" src="20_components/no1_controls.jsx"></script>
+  <script type="text/babel" src="20_components/no2_data_display.jsx"></script>
+  <script type="text/babel" src="20_components/no3_gantt_nav.jsx"></script>
+
   <!-- Visualizers · shared kit 必須先於各 leaf visualizer -->
   <script type="text/babel" src="10_foundations/visualizers/no0_shared_card_kit.jsx"></script>
   <script type="text/babel" src="10_foundations/visualizers/no1_colors_visualizer.jsx"></script>
@@ -55,6 +65,17 @@
 
   <!-- Explorations · 多版本提案主題（決策前隔離，選定後才回寫 Foundations） -->
   <script type="text/babel" src="50_explorations/no1_color_directions/no1_color_directions.jsx"></script>
+
+  <!-- Components showcase · 消費 20_components 三檔與 design-canvas 的 DC 原語，故排在最後 -->
+  <script type="text/babel" src="20_components/components-showcase.jsx"></script>
+
+  <!-- Screens · 消費 20_components 三檔與 DC 原語，一檔一畫面 + 該畫面的 canvas section。
+       dev order 三檔嚴格依序：tokens → subsections（載入時即用 tokens 生日資料）→ 畫面本體 -->
+  <script type="text/babel" src="30_screens/no1_list_screen/no1_list_screen.jsx"></script>
+  <script type="text/babel" src="30_screens/no2_kanban_screen/no2_kanban_screen.jsx"></script>
+  <script type="text/babel" src="30_screens/no3_dev_order_screen/tokens.jsx"></script>
+  <script type="text/babel" src="30_screens/no3_dev_order_screen/no2_subsections.jsx"></script>
+  <script type="text/babel" src="30_screens/no3_dev_order_screen/no3_dev_order_screen.jsx"></script>
 
   <!-- App entry (router + view tabs) -->
   <script type="text/babel" src="90_workbench/app.jsx"></script>

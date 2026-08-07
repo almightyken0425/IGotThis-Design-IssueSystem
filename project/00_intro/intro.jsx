@@ -22,9 +22,9 @@ function IntroSection() {
             <p>這是一份「<b>會持續迭代</b>」的設計檔案，不是某個版本的快照。產品是<b>桌面瀏覽器的工單管理系統</b>：高資訊密度、專業工具感。</p>
             <p>它替你保留三種現場：</p>
             <ol>
-              <li><b>設計基礎</b> — token 標準值（目前唯一內容，v1 初稿供視覺 review 迭代）</li>
-              <li><b>正式設計稿</b> — 未來的 screens 分頁，對齊 spec / impl 的畫面樣貌</li>
-              <li><b>探索素材</b> — 未來的 explorations 分頁，多版本提案並陳</li>
+              <li><b>設計基礎</b> — Foundations 分頁，token 標準值與元件庫</li>
+              <li><b>正式設計稿</b> — Screens 分頁，對齊 spec / impl 的畫面樣貌</li>
+              <li><b>探索素材</b> — Explorations 分頁，多版本提案並陳</li>
             </ol>
             <p>這份檔案位於 IGotThis 產品的 <code>no4_product_designs/no1_issue_system/</code>，是該 module 的 <b>Module Design git</b>，並擔任<b>設計標準的仲裁端</b>：所有 token / 元件 / 畫面的決議寫在這裡，spec 與 impl 跟著對齊。</p>
             <p style={{ fontSize: 13, color: TOKENS.ink2, lineHeight: 1.6 }}>
@@ -35,18 +35,20 @@ function IntroSection() {
       </DCArtboard>
 
       {/* 2. tab 導覽 ───────────────────────────────────────────── */}
-      <DCArtboard id="tabs" label="分頁地圖" width={520} height={560}>
+      <DCArtboard id="tabs" label="分頁地圖" width={520} height={680}>
         <IntroCard>
           <IntroTag>分頁地圖</IntroTag>
-          <IntroTitle>目前 2 個頂層分頁</IntroTitle>
+          <IntroTitle>4 個頂層分頁</IntroTitle>
           <IntroBody>
             <TabRow no="00" name="Intro" q="這份檔案是什麼？怎麼用？" dir="00_intro/"/>
-            <TabRow no="10" name="Foundations" q="顏色、字體、間距、圓角、陰影的標準值是什麼？" dir="10_foundations/"/>
+            <TabRow no="10" name="Foundations" q="顏色、字體、間距、圓角、陰影與元件的標準值是什麼？" dir="10_foundations/ + 20_components/"/>
+            <TabRow no="30" name="Screens" q="這個畫面長什麼樣？邊界狀態怎麼呈現？" dir="30_screens/"/>
+            <TabRow no="50" name="Explorations" q="這個決策有哪幾個候選？選了哪個、為什麼？" dir="50_explorations/"/>
             <p style={{ fontSize: 13, color: TOKENS.ink2, lineHeight: 1.6, marginTop: 16 }}>
-              Foundations 目前只有 <b>Atomic</b> 一個 group，3 個 leaf：Colors / Type / Layout。group 與 leaf 清單以 <code>90_workbench/app.jsx</code> 的 <code>FOUNDATIONS_GROUPS</code> 為唯一真相。
+              Foundations 分 <b>Atomic</b>（Colors / Type / Layout）與 <b>Components</b>（Controls / Data Display / Gantt &amp; Nav）兩個 group。Screens 一個 leaf 對應一個畫面，畫面的 variant 不佔 leaf——邊界狀態並陳在該畫面的 section 內，層級與排序這類切換走畫面自身的控件。
             </p>
             <p style={{ fontSize: 13, color: TOKENS.ink2, lineHeight: 1.6, marginTop: 8 }}>
-              未來擴充照 SuSuGiGi design canvas 的節奏：Component Tokens group、Components group、Screens tab、Explorations tab，段落編號 20 / 30 / 50 已預留。
+              group 與 leaf 清單以 <code>90_workbench/app.jsx</code> 的 <code>FOUNDATIONS_GROUPS</code> / <code>SCREEN_GROUPS</code> / <code>EXPLORATION_GROUPS</code> 三個常數為唯一真相，本卡不重複列表。
             </p>
           </IntroBody>
         </IntroCard>
@@ -99,7 +101,7 @@ function IntroSection() {
       </DCArtboard>
 
       {/* 5. 目錄結構速查 ───────────────────────────────────────── */}
-      <DCArtboard id="file-map" label="目錄結構速查" width={520} height={560}>
+      <DCArtboard id="file-map" label="目錄結構速查" width={520} height={720}>
         <IntroCard>
           <IntroTag>檔案系統</IntroTag>
           <IntroTitle>數字前綴 = 顯示順序 = 概念順序</IntroTitle>
@@ -111,11 +113,22 @@ function IntroSection() {
 │   ├── no1_atomic_tokens.jsx      PALETTE / PRIMARY_PINE / THEMES / SHADOW_ELEVATION
 │   ├── no2_typography.jsx         FONT_FAMILY / TYPOGRAPHY / TYPE_STYLES
 │   ├── no3_layout_tokens.jsx      SPACING / RADIUS / MOTION / ICON_SIZE / ROW_HEIGHT
+│   ├── component_tokens/          元件專屬參數，no1-no3 對應 20_components 三檔
 │   └── visualizers/               Foundations 視覺化卡片
 │       ├── no0_shared_card_kit    共用 UI primitives
 │       └── no1-no3                colors / type / layout，一 leaf 一檔
+├── 20_components/                 元件實作 + showcase
+│   ├── no1_controls.jsx           Button / Select / TextInput / Badge / Avatar / Chip
+│   ├── no2_data_display.jsx       DataTable / KanbanColumn / KanbanCard / EmptyState
+│   ├── no3_gantt_nav.jsx          Gantt 三件 / SortableRow / LevelSwitcher / Toolbar
+│   └── components-showcase.jsx    Foundations > Components 三個 leaf 的 section
+├── 30_screens/                    一畫面一子目錄，畫面本體 + 自己的 canvas section
+│   ├── no1_list_screen/           ListScreen + ScreenListSection
+│   ├── no2_kanban_screen/         KanbanScreen + ScreenKanbanSection
+│   └── no3_dev_order_screen/      tokens → subsections → 畫面，三檔嚴格依序載入
+├── 50_explorations/               多版本提案，決策前隔離
 └── 90_workbench/
-    ├── app.jsx                    router + SideTOC + FOUNDATIONS_GROUPS
+    ├── app.jsx                    router + SideTOC + 三組 GROUPS 常數
     └── design-canvas.jsx          DesignCanvas / DCSection / DCFamily / DCArtboard`}</pre>
             <p style={{ fontSize: 13, color: TOKENS.ink2, lineHeight: 1.6, marginTop: 12 }}>
               數字前綴保證檔案系統顯示順序與概念順序一致。新增分頁挑空著的 10 倍數段落。
