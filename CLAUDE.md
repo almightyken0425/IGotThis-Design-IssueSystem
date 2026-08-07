@@ -25,14 +25,23 @@
 
 本 repo 是一份 React HTML 設計 sandbox，不需建置流程，瀏覽器直接打開即可執行。
 
-入口：`project/IGotThis.html`，由 `90_workbench/app.jsx` 作 router，目前 2 個頂層 tab：
+入口：`project/IGotThis.html`，由 `90_workbench/app.jsx` 作 router，4 個頂層 tab：
 
 - **Intro** — 本 repo 的使用說明書
-- **Foundations** — 設計標準視覺化，目前僅 Atomic 一個 group，leaf 為 Colors / Type / Layout。group 與 leaf 清單以 `90_workbench/app.jsx` 的 `FOUNDATIONS_GROUPS` 為唯一真相，本檔不重複列表
+- **Foundations** — 設計標準視覺化，分 Atomic 與 Components 兩個 group
+- **Screens** — MVP 三畫面的 live artboard，variant 由畫面自身切換件承載、不佔 leaf
+- **Explorations** — 多版本提案主題，決策狀態標在各 artboard label
 
-token 檔位於 `10_foundations/`，三檔分別承載色彩與主題、字體、版面原語。視覺化卡片位於 `10_foundations/visualizers/`，只讀活 token 渲染、不定義 token。
+group 與 leaf 清單以 `90_workbench/app.jsx` 的 `FOUNDATIONS_GROUPS`、`SCREEN_GROUPS`、`EXPLORATION_GROUPS` 三個常數為唯一真相，本檔不重複列表。
 
-未來擴充 Component Tokens、Components、Screens、Explorations 時，照同機制的 SuSuGiGi design canvas 節奏補目錄與 router 入口。
+目錄承載如下。
+
+- `10_foundations/` — 三檔 atomic token，承載色彩與主題、字體、版面原語
+- `10_foundations/component_tokens/` — 各元件家族的尺寸與狀態色映射
+- `10_foundations/visualizers/` — 視覺化卡片，只讀活 token 渲染、不定義 token
+- `20_components/` — 元件實作與 showcase
+- `30_screens/` — 每畫面一個子目錄，檔案多時拆 tokens 與 subsections
+- `50_explorations/` — 提案主題，完全隔離、不牽動 token 檔
 
 ---
 

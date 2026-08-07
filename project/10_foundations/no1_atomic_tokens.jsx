@@ -163,8 +163,15 @@ const THEME_DARK = {
   },
   state: {
     hover:    { bg: PALETTE.sand[800] },
-    // 選取底為 pine 400 疊 16%（合成後 #2F3830），fg 取 300 對合成底 6.90:1。
-    selected: { bg: 'rgba(101,179,177,0.16)', fg: PRIMARY_PINE[300], border: PRIMARY_PINE[400] },
+    // 選取底為 pine 400 疊 10%（合成後 #2B3027），fg 取 300 對合成底 7.69:1。
+    // alpha 由 16% 降到 10% 是對比預算逼出來的、不是手感：選取底把整列抬亮，
+    // 疊在上面的非選取色前景跟著掉分。16% 時表格選取列的 muted 文字（text.tertiary）
+    // 只剩 4.16:1、逾期紅字（status.error_fg）只剩 4.37:1，兩者都落在 AA 之下；
+    // 暗主題沒有比 #F87171 更亮的紅可換，只能收底色。降到 10% 後 tertiary 4.66、
+    // error_fg 4.90，全數過關，且 selected.fg 從 6.90 升到 7.69。
+    // 選取感不靠這層底獨撐——表格另有 2px 左側 accent 條、其餘消費端有 border；
+    // 10% 對 surface 的亮度比仍有 1.18，比 light 主題的選取底還明顯。
+    selected: { bg: 'rgba(101,179,177,0.10)', fg: PRIMARY_PINE[300], border: PRIMARY_PINE[400] },
     // 同 THEME_LIGHT：停用元件不受 1.4.3 與 1.4.11 約束（對 surface 2.73:1）。
     disabled: { fg: PALETTE.sand[600], opacity: 0.45 },
     focus:    { ring: PRIMARY_PINE[400], ringWidth: 2 },
