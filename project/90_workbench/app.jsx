@@ -52,6 +52,12 @@ const FOUNDATIONS_GROUPS = [
 // section 內的 family 與 artboard，或畫面內建切換件的職責。
 const SCREEN_GROUPS = [
   {
+    id: 'shell', label: 'Shell',
+    topics: [
+      { id: 'app-shell', label: 'App Shell · 應用外殼', render: () => <ScreenAppShellSection/> },
+    ],
+  },
+  {
     id: 'work-views', label: 'Work Views',
     topics: [
       { id: 'list',      label: 'List · 清單表格',   render: () => <ScreenListSection/> },
