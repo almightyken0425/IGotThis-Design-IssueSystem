@@ -78,6 +78,12 @@
   <script type="text/babel" src="30_screens/no3_dev_order_screen/no3_dev_order_screen.jsx"></script>
   <script type="text/babel" src="30_screens/no4_app_shell/no4_app_shell.jsx"></script>
 
+  <!-- issue detail 三檔嚴格依序：tokens → subsections（載入時即用 tokens 組欄位/
+       關聯/異動歷史 fixture）→ 畫面本體 -->
+  <script type="text/babel" src="30_screens/no5_issue_detail_screen/tokens.jsx"></script>
+  <script type="text/babel" src="30_screens/no5_issue_detail_screen/no2_subsections.jsx"></script>
+  <script type="text/babel" src="30_screens/no5_issue_detail_screen/no5_issue_detail_screen.jsx"></script>
+
   <!-- App entry (router + view tabs) -->
   <script type="text/babel" src="90_workbench/app.jsx"></script>
 </body>
