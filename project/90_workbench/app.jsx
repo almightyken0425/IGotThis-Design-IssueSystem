@@ -63,6 +63,7 @@ const SCREEN_GROUPS = [
       { id: 'list',      label: 'List · 清單表格',   render: () => <ScreenListSection/> },
       { id: 'kanban',    label: 'Kanban · 工單看板', render: () => <ScreenKanbanSection/> },
       { id: 'dev-order', label: 'Dev Order · 開發順序表', render: () => <ScreenDevOrderSection/> },
+      { id: 'issue-detail', label: 'Issue Detail · 工單詳情', render: () => <ScreenIssueDetailSection/> },
     ],
   },
 ];
