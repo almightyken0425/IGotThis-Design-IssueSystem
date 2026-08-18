@@ -65,6 +65,14 @@
 
 ---
 
+## 設計待辦
+
+- login screen 尚無定案畫面
+- impl 端暫用既有 token 組裝
+- 待補後供 impl 逐名對齊
+
+---
+
 ## 原生工作規則
 
 - 任何改動先使用 `decision_framework_router`
