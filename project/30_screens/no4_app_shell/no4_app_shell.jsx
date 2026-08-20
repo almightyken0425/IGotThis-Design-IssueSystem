@@ -8,19 +8,22 @@
 // 切換畫面形態不會丟失當前檢視，選檢視也不必在三個畫面各做一次。
 //
 // 對側 spec：no3_product_specs/no1_issue_system/no2_screens/no4_app_shell.md
-//   佈局五段（品牌 / 當前檢視 / 畫面形態導覽 / 帳號 / 內容）與互動五條
-//   （選擇檢視 / 新增檢視 / 切換畫面形態 / 切換主題 / 登出）逐條對位。
-//   當前檢視不隨畫面形態變動，規則本體在 ViewLogic / selectCurrentView。
+//   佈局五段（品牌 / 當前檢視 / 畫面形態導覽 / 帳號 / 內容）與互動全條逐條對位，
+//   含新增檢視表單展開 / 收合、日曆選用、帳號預設日曆設定。
+//   當前檢視不隨畫面形態變動，規則本體在 ViewLogic / selectCurrentView；
+//   日曆解析規則在 ViewLogic / resolveViewCalendar，本畫面只負責選用與設定入口。
 //
 // 消費元件：
-//   20_components/no1_controls.jsx — Select（檢視選擇）、Button（新增檢視 / 主題 / 登出）
+//   20_components/no1_controls.jsx — Select（檢視選擇 / 新增檢視表單三層與日曆 / 帳號預設日曆）、
+//     TextInput（新增檢視表單的檢視名稱）、Button（新增檢視 / 建立 / 取消 / 主題 / 登出）
 //   20_components/no2_data_display.jsx — EmptyState（無檢視時的內容區）
-//   導覽項不抽元件：只有外殼用得到，抽出去會是只有一個消費端的空殼層。
+//   導覽項與新增檢視表單不抽元件：只有外殼用得到，抽出去會是只有一個消費端的空殼層。
 //
 // Variants：
-//   default — 三張檢視、當前為開發總表、形態停在清單表格
-//   empty   — 名下無任何檢視，選擇器收起、內容區出 EmptyState
+//   default   — 三張檢視、當前為開發總表、形態停在清單表格
+//   empty     — 名下無任何檢視，選擇器收起、內容區出 EmptyState
 //   dev-order — 當前形態切到開發順序表，示意選取態隨形態走、檢視不變
+//   add-view  — 新增檢視表單展開，示意檢視名稱、資料來源三層、日曆選用與建立 / 取消
 //
 // 兩條硬規（與元件檔同源）：
 //   1. 一切視覺值引用 token。幾何走 APP_SHELL_TOKENS（其值全數由 SPACING /
@@ -63,6 +66,11 @@ const APP_SHELL_TOKENS = {
   PLACEHOLDER_BORDER:     BORDER_WIDTH.hairline,
   PLACEHOLDER_LABEL_TYPE: TYPE_STYLES.caption,
 
+  /** 新增檢視表單：行內展開於當前檢視區，子區塊底比照 toolbar 用 surface_dim。 */
+  ADD_FORM_GAP:     SPACING.xs,               // 4，表單內欄位間距
+  ADD_FORM_PADDING: SPACING.sm,               // 8
+  ADD_FORM_RADIUS:  RADIUS.sm,
+
   TRANSITION_MS:     MOTION.duration.instant,
   TRANSITION_EASING: MOTION.easing.standard,
 };
@@ -87,10 +95,19 @@ const APP_SHELL_MODES = [
 
 const APP_SHELL_ACCOUNT = '成員甲';
 
+// 新增檢視表單：資料來源三層與日曆選用的假清單，canvas 示意逐層收窄用。
+// impl 端清單來自容器樹與日曆定義查詢，canvas 以固定值代替。
+const APP_SHELL_TEAMS    = [{ value: 'team-core', label: 'Core' }, { value: 'team-growth', label: 'Growth' }];
+const APP_SHELL_PRODUCTS = [{ value: 'prod-igt', label: 'IGotThis' }, { value: 'prod-ssg', label: 'SuSuGiGi' }];
+const APP_SHELL_MGMTS    = [{ value: 'mgmt-web', label: 'Web' }, { value: 'mgmt-ios', label: 'iOS' }];
+const APP_SHELL_CALENDARS = [{ value: 'tw', label: '台灣' }, { value: 'us', label: '美國' }];
+const APP_SHELL_DEFAULT_CALENDAR = 'tw';
+
 const APP_SHELL_VARIANTS = {
   default:     { views: APP_SHELL_VIEWS, currentView: 'dev-all', mode: 'list' },
   empty:       { views: [],              currentView: null,      mode: 'list' },
   'dev-order': { views: APP_SHELL_VIEWS, currentView: 'dev-all', mode: 'dev-order' },
+  'add-view':  { views: APP_SHELL_VIEWS, currentView: 'dev-all', mode: 'list', addFormOpen: true },
 };
 
 // ─── 內部工具（AS_ 前綴避免與其他畫面 / 元件檔的全域名稱相撞）───
@@ -170,12 +187,64 @@ function AppShellGroupLabel({ theme, children }) {
   );
 }
 
+// ─── 新增檢視表單 ────────────────────────────────────────────
+// 行內展開於「當前檢視」區塊內，取代新增檢視入口。
+// 對側 spec：no4_app_shell.md「新增檢視表單」——檢視名稱、資料來源的組織範圍
+// （Team/Product/Mgmt 逐層選擇，選到哪層即該層為範圍）、日曆選用（留白跟隨帳號預設）。
+
+function AppShellAddViewForm({ theme, onCancel, onCreate }) {
+  const [name, setName] = React.useState('');
+  const [teamId, setTeamId] = React.useState(undefined);
+  const [productId, setProductId] = React.useState(undefined);
+  const [mgmtId, setMgmtId] = React.useState(undefined);
+  const [calendarName, setCalendarName] = React.useState(undefined);
+
+  // 換上層選擇時下層失效，比照容器樹「僅屬一個上層」的嚴格歸屬。
+  const onTeamChange = (id) => { setTeamId(id); setProductId(undefined); setMgmtId(undefined); };
+  const onProductChange = (id) => { setProductId(id); setMgmtId(undefined); };
+
+  return (
+    <div
+      style={{
+        display: 'flex', flexDirection: 'column', gap: A.ADD_FORM_GAP,
+        padding: A.ADD_FORM_PADDING,
+        borderRadius: A.ADD_FORM_RADIUS,
+        background: theme.bg.surface_dim,
+      }}
+    >
+      <TextInput theme={theme} size="sm" placeholder="檢視名稱" value={name} onChange={setName} fullWidth />
+      <Select
+        theme={theme} size="sm" prefix="Team" options={APP_SHELL_TEAMS}
+        value={teamId} onChange={onTeamChange} fullWidth
+      />
+      <Select
+        theme={theme} size="sm" prefix="Product" options={APP_SHELL_PRODUCTS}
+        value={productId} onChange={onProductChange} disabled={teamId === undefined} fullWidth
+      />
+      <Select
+        theme={theme} size="sm" prefix="Mgmt" options={APP_SHELL_MGMTS}
+        value={mgmtId} onChange={setMgmtId} disabled={productId === undefined} fullWidth
+      />
+      <Select
+        theme={theme} size="sm" prefix="日曆" options={APP_SHELL_CALENDARS}
+        value={calendarName} placeholder="跟隨帳號預設" onChange={setCalendarName} fullWidth
+      />
+      <div style={{ display: 'flex', gap: A.ADD_FORM_GAP }}>
+        <Button theme={theme} variant="primary" size="sm" label="建立" onClick={onCreate} />
+        <Button theme={theme} variant="ghost" size="sm" label="取消" onClick={onCancel} />
+      </div>
+    </div>
+  );
+}
+
 // ─── 畫面 ────────────────────────────────────────────────────
 
 function AppShell({ variant = 'default', theme = DEFAULT_THEME }) {
   const preset = APP_SHELL_VARIANTS[variant] ?? APP_SHELL_VARIANTS.default;
   const [currentView, setCurrentView] = React.useState(preset.currentView);
   const [mode, setMode] = React.useState(preset.mode);
+  const [showAddForm, setShowAddForm] = React.useState(preset.addFormOpen ?? false);
+  const [defaultCalendar, setDefaultCalendar] = React.useState(APP_SHELL_DEFAULT_CALENDAR);
 
   const hasViews = preset.views.length > 0;
   const currentLabel = preset.views.find((v) => v.value === currentView)?.label ?? '';
@@ -241,7 +310,18 @@ function AppShell({ variant = 'default', theme = DEFAULT_THEME }) {
               尚無檢視
             </span>
           )}
-          <Button theme={theme} variant="secondary" size="sm" fullWidth label="新增檢視" />
+          {showAddForm ? (
+            <AppShellAddViewForm
+              theme={theme}
+              onCancel={() => setShowAddForm(false)}
+              onCreate={() => setShowAddForm(false)}
+            />
+          ) : (
+            <Button
+              theme={theme} variant="secondary" size="sm" fullWidth label="新增檢視"
+              onClick={() => setShowAddForm(true)}
+            />
+          )}
         </div>
 
         {/* 畫面形態導覽 */}
@@ -275,6 +355,10 @@ function AppShell({ variant = 'default', theme = DEFAULT_THEME }) {
           >
             {APP_SHELL_ACCOUNT}
           </span>
+          <Select
+            theme={theme} size="sm" prefix="日曆" options={APP_SHELL_CALENDARS}
+            value={defaultCalendar} placeholder="未設定" onChange={setDefaultCalendar} fullWidth
+          />
           <Button theme={theme} variant="secondary" size="sm" fullWidth label="型別定義" />
           <Button theme={theme} variant="secondary" size="sm" fullWidth label="切換主題" />
           <Button theme={theme} variant="ghost" size="sm" fullWidth label="登出" />
@@ -362,6 +446,20 @@ function ScreenAppShellSection() {
           <AppShell variant="empty" theme={THEME_DARK} />
         </DCArtboard>
       </DCFamily>
+
+      <DCFamily
+        id="as-add-view"
+        title="add-view"
+        subtitle="新增檢視表單展開：檢視名稱、資料來源三層（Team/Product/Mgmt 逐層收窄）、日曆選用，留白跟隨帳號預設。"
+        direction="column"
+      >
+        <DCArtboard id="as-add-view-light" label="add-view · THEME_LIGHT (live)" width={W} height="auto">
+          <AppShell variant="add-view" theme={THEME_LIGHT} />
+        </DCArtboard>
+        <DCArtboard id="as-add-view-dark" label="add-view · THEME_DARK (live)" width={W} height="auto">
+          <AppShell variant="add-view" theme={THEME_DARK} />
+        </DCArtboard>
+      </DCFamily>
     </DCSection>
   );
 }
@@ -369,5 +467,7 @@ function ScreenAppShellSection() {
 Object.assign(window, {
   APP_SHELL_TOKENS,
   APP_SHELL_VIEWS, APP_SHELL_MODES, APP_SHELL_ACCOUNT, APP_SHELL_VARIANTS,
-  AppShell, ScreenAppShellSection,
+  APP_SHELL_TEAMS, APP_SHELL_PRODUCTS, APP_SHELL_MGMTS,
+  APP_SHELL_CALENDARS, APP_SHELL_DEFAULT_CALENDAR,
+  AppShell, AppShellAddViewForm, ScreenAppShellSection,
 });
