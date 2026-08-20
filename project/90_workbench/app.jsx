@@ -66,6 +66,12 @@ const SCREEN_GROUPS = [
       { id: 'issue-detail', label: 'Issue Detail · 工單詳情', render: () => <ScreenIssueDetailSection/> },
     ],
   },
+  {
+    id: 'admin', label: 'Admin',
+    topics: [
+      { id: 'type-definition', label: 'Type Definition · 型別定義', render: () => <ScreenTypeDefinitionSection/> },
+    ],
+  },
 ];
 
 // EXPLORATION_GROUPS — 多版本提案主題；每 group 一個主題、topic 為探索軸。

@@ -275,6 +275,7 @@ function AppShell({ variant = 'default', theme = DEFAULT_THEME }) {
           >
             {APP_SHELL_ACCOUNT}
           </span>
+          <Button theme={theme} variant="secondary" size="sm" fullWidth label="型別定義" />
           <Button theme={theme} variant="secondary" size="sm" fullWidth label="切換主題" />
           <Button theme={theme} variant="ghost" size="sm" fullWidth label="登出" />
         </div>
