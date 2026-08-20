@@ -221,13 +221,14 @@ function IconButton({
 // ─── Select ─── 下拉選單
 // 排序依據、分組依據用。trigger + level2 浮層 menu，self-contained 開合狀態。
 // props:
-//   prefix    行內前綴，如「排序」；渲染成「排序:」與值同行、色階低一階
-//   options   [{ value, label }]
-//   value     受控選中值；找不到對應 option 時顯示 placeholder
-//   onChange  (value) => void
+//   prefix     行內前綴，如「排序」；渲染成「排序:」與值同行、色階低一階
+//   options    [{ value, label }]
+//   value      受控選中值；找不到對應 option 時顯示 placeholder
+//   onChange   (value) => void
+//   fullWidth  撐滿容器寬度；窄欄表單直向堆疊多個 Select 時用，比照 Button / TextInput 同名 prop
 function Select({
   prefix, options = [], value, placeholder = '請選擇', onChange,
-  size = 'md', disabled = false, theme = DEFAULT_THEME, style = {},
+  size = 'md', disabled = false, fullWidth = false, theme = DEFAULT_THEME, style = {},
 }) {
   const [open, setOpen]   = React.useState(false);
   const [hover, setHover] = React.useState(false);
@@ -254,7 +255,14 @@ function Select({
                  : (open ? theme.state.focus.ring : theme.border.input);
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative', display: 'inline-flex', ...style }}>
+    <div
+      ref={wrapRef}
+      style={{
+        position: 'relative', display: 'inline-flex',
+        width: fullWidth ? '100%' : undefined,
+        ...style,
+      }}
+    >
       <button
         onClick={() => { if (!disabled) setOpen(o => !o); }}
         disabled={disabled}
@@ -267,6 +275,7 @@ function Select({
         style={{
           display: 'inline-flex', alignItems: 'center', gap: SELECT_TOKENS.GAP,
           height: SELECT_TOKENS.HEIGHT[size],
+          width: fullWidth ? '100%' : undefined,
           padding: `0 ${SELECT_TOKENS.PADDING_RIGHT}px 0 ${SELECT_TOKENS.PADDING_LEFT}px`,
           position: 'relative',
           borderRadius: SELECT_TOKENS.RADIUS,
@@ -311,6 +320,7 @@ function Select({
           style={{
             position: 'absolute', top: '100%', left: 0, zIndex: 50,
             marginTop: SELECT_TOKENS.MENU.OFFSET,
+            width: fullWidth ? '100%' : undefined,
             minWidth: SELECT_TOKENS.MENU.MIN_WIDTH,
             maxHeight: SELECT_TOKENS.MENU.MAX_HEIGHT,
             overflowY: 'auto',
