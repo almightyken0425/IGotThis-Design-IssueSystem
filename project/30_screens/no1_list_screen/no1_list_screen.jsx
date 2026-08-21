@@ -2,17 +2,18 @@
 // ListScreen · 清單表格畫面
 //
 // 角色：工單系統的主檢視。一列一張工單攤在表格上，工具列承載
-// 資料來源、篩選、排序依據、分組依據與欄位顯示設定五個入口；
+// 建立工單、資料來源、篩選、排序依據、分組依據與欄位顯示設定六個入口；
 // 被權限濾除的工單以標示列交代筆數與原因，不靜默消失。
 //
 // 對側 spec：no3_product_specs/no1_issue_system/no2_screens/no1_list_screen.md
-//   佈局三段（檢視工具列 / 權限過濾標示 / 工單表格）與互動三條
-//   （選擇排序依據 / 選擇分組依據 / 調整欄位顯示設定）逐條對位。
+//   佈局三段（檢視工具列 / 權限過濾標示 / 工單表格）與互動四條
+//   （選擇排序依據 / 選擇分組依據 / 調整欄位顯示設定 / 建立工單）逐條對位。
 //
 // 消費元件：
 //   20_components/no3_gantt_nav.jsx — Toolbar（工具列容器，左右兩區）
 //   20_components/no1_controls.jsx  — Select（資料來源 / 排序 / 分組）、
-//                                     Button（篩選）、IconButton（欄位顯示設定）、
+//                                     Button（建立工單 / 篩選 / 建立表單的送出與取消）、
+//                                     IconButton（欄位顯示設定）、TextInput（建立工單的標題輸入）、
 //                                     Chip（已套用的篩選條件）
 //   20_components/no2_data_display.jsx — DataTable（欄位標題列 + 工單列 + 分組列）、
 //                                     FilterNotice（權限過濾標示）、EmptyState（無工單）
@@ -23,6 +24,7 @@
 //   empty    — 篩選條件套下去後無工單，表格區改出 EmptyState
 //   filtered — 6 筆可見 + 權限濾除 5 筆的標示列
 //   grouped  — 依狀態分組展開，分組標題列吃狀態欄的值
+//   creating — 建立工單表單展開中，標題輸入待填
 //
 // 兩條硬規（與元件檔同源）：
 //   1. 一切視覺值引用 token。幾何走 LIST_SCREEN_TOKENS（其值全數由 SPACING /
@@ -51,6 +53,9 @@ const LIST_SCREEN_TOKENS = {
   CHIP_BAR_GAP:           SPACING.sm,              // 8
   CHIP_BAR_MIN_HEIGHT:    CONTROL_HEIGHT.sm,       // 24，條件列空著也不塌陷
   TABLE_DENSITY:          'base',
+  CREATE_BAR_GAP:         SPACING.sm,              // 8
+  CREATE_BAR_PADDING:     SPACING.sm,              // 8
+  CREATE_BAR_RADIUS:      RADIUS.sm,               // 4，比照 ADD_FORM_RADIUS 的行內小面板半徑
   COLUMN_WIDTH: {
     key:      SPACING.xl * 5,                      // 120，容得下 mono 的 IGT-1042
     status:   SPACING.lg * 7,                      // 112，四字狀態 badge 加排序指示
@@ -177,6 +182,12 @@ const LIST_SCREEN_VARIANTS = {
     filters: LIST_SCREEN_FILTERS.base, filteredCount: 0,
     sort: { key: 'status', direction: 'asc' }, groupBy: 'status',
   },
+  creating: {
+    viewName: '本季進行中', rows: LIST_SCREEN_ROWS,
+    filters: LIST_SCREEN_FILTERS.base, filteredCount: 0,
+    sort: { key: 'due', direction: 'asc' }, groupBy: 'none',
+    createOpen: true,
+  },
 };
 
 // ─── 內部工具（LS_ 前綴避免與其他畫面 / 元件檔的全域名稱相撞）───
@@ -271,24 +282,58 @@ function LS_FilterChipBar({ theme, filters = [] }) {
   );
 }
 
+// ─── LS_CreateIssueBar ─── 建立工單的行內表單
+// 區域性小元件：點擊工具列的建立工單即在內容區展開，Enter 或按建立送出，
+// 按取消收合。只收標題一個欄位——工單集與工單型別現階段由工作區單一預設
+// 帶入，前端尚未開放選擇，對側 impl（ListScreen.tsx 的 CreateIssueBar）同形。
+function LS_CreateIssueBar({ theme, onSubmit, onCancel }) {
+  const [title, setTitle] = React.useState('');
+  const submit = () => {
+    const trimmed = title.trim();
+    if (trimmed === '') return;
+    onSubmit(trimmed);
+  };
+  return (
+    <div
+      onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
+      style={{
+        display: 'flex', alignItems: 'center',
+        gap: LIST_SCREEN_TOKENS.CREATE_BAR_GAP,
+        padding: LIST_SCREEN_TOKENS.CREATE_BAR_PADDING,
+        borderRadius: LIST_SCREEN_TOKENS.CREATE_BAR_RADIUS,
+        background: theme.bg.surface,
+        border: `${BORDER_WIDTH.hairline}px solid ${theme.border.base}`,
+      }}
+    >
+      <TextInput
+        theme={theme} leadingIcon="plus" placeholder="輸入工單標題後按 Enter 建立"
+        value={title} onChange={setTitle} fullWidth style={{ flex: 1 }}
+      />
+      <Button theme={theme} variant="primary" label="建立" onClick={submit} />
+      <Button theme={theme} variant="ghost" label="取消" onClick={onCancel} />
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────
 // ListScreen · 畫面主元件
 //
 // props:
-//   variant  'default' | 'empty' | 'filtered' | 'grouped'
+//   variant  'default' | 'empty' | 'filtered' | 'grouped' | 'creating'
 //   theme    THEME_LIGHT | THEME_DARK（預設 DEFAULT_THEME）
 // ─────────────────────────────────────────────────────────────
 function ListScreen({ variant = 'default', theme = DEFAULT_THEME }) {
   const T = LIST_SCREEN_TOKENS;
   const config = LIST_SCREEN_VARIANTS[variant] || LIST_SCREEN_VARIANTS.default;
 
-  // 當次瀏覽狀態：排序依據、分組依據、資料來源、選取列與欄位設定面板開合。
-  // 四者都不持久化，換 variant 等同換一次瀏覽。
+  // 當次瀏覽狀態：排序依據、分組依據、資料來源、選取列、欄位設定面板開合
+  // 與建立工單表單開合。皆不持久化，換 variant 等同換一次瀏覽。
   const [sort, setSort] = React.useState(config.sort);
   const [groupBy, setGroupBy] = React.useState(config.groupBy);
   const [source, setSource] = React.useState('all');
   const [selectedIds, setSelectedIds] = React.useState([]);
   const [columnPanelOpen, setColumnPanelOpen] = React.useState(false);
+  const [createOpen, setCreateOpen] = React.useState(config.createOpen ?? false);
 
   const rows = React.useMemo(() => LS_sortRows(config.rows, sort), [config.rows, sort]);
 
@@ -305,6 +350,10 @@ function ListScreen({ variant = 'default', theme = DEFAULT_THEME }) {
 
   const toolbarRight = (
     <React.Fragment>
+      <Button
+        theme={theme} variant="primary" iconLeft="plus" label="建立工單"
+        onClick={() => setCreateOpen((open) => !open)}
+      />
       <Button theme={theme} variant="secondary" iconLeft="filter" label="篩選" />
       <Select
         theme={theme} prefix="排序" options={LIST_SCREEN_SORT_OPTIONS}
@@ -339,6 +388,15 @@ function ListScreen({ variant = 'default', theme = DEFAULT_THEME }) {
       }}>
         <LS_FilterChipBar theme={theme} filters={config.filters} />
 
+        {/* 建立工單表單：點工具列的建立工單展開，取消或送出後收合 */}
+        {createOpen && (
+          <LS_CreateIssueBar
+            theme={theme}
+            onSubmit={() => setCreateOpen(false)}
+            onCancel={() => setCreateOpen(false)}
+          />
+        )}
+
         {/* 權限過濾標示：count 為 0 時 FilterNotice 自身不渲染 */}
         <FilterNotice theme={theme} count={config.filteredCount} reason="無讀取權" tone="info" />
 
@@ -369,7 +427,7 @@ function ListScreen({ variant = 'default', theme = DEFAULT_THEME }) {
 
 // ─────────────────────────────────────────────────────────────
 // Canvas section · Screens > ListScreen
-// 四個 variant × 兩主題共八張 artboard，皆為 live JSX。
+// 五個 variant × 兩主題共十張 artboard，皆為 live JSX。
 // dark 卡直接畫在 THEME_DARK.bg.base 上，不靠 canvas 白底掩護。
 // ─────────────────────────────────────────────────────────────
 function ScreenListSection() {
@@ -378,7 +436,7 @@ function ScreenListSection() {
     <DCSection
       id="screen-list"
       title="ListScreen · 清單表格"
-      subtitle="對側 spec：no2_screens/no1_list_screen.md。工具列五個入口、權限過濾標示、工單表格三段；排序與分組為當次瀏覽狀態。"
+      subtitle="對側 spec：no2_screens/no1_list_screen.md。工具列六個入口、權限過濾標示、工單表格三段；排序與分組為當次瀏覽狀態。"
     >
       <DCFamily
         id="ls-standard" title="Default"
@@ -389,6 +447,18 @@ function ScreenListSection() {
         </DCArtboard>
         <DCArtboard id="ls-default-dark" label="default · THEME_DARK (live)" width={W} height="auto">
           <ListScreen variant="default" theme={THEME_DARK} />
+        </DCArtboard>
+      </DCFamily>
+
+      <DCFamily
+        id="ls-creating" title="Creating"
+        subtitle="點建立工單展開行內表單，只收標題。Enter 或按建立送出，按取消收合。"
+      >
+        <DCArtboard id="ls-creating-light" label="creating · THEME_LIGHT (live)" width={W} height="auto">
+          <ListScreen variant="creating" theme={THEME_LIGHT} />
+        </DCArtboard>
+        <DCArtboard id="ls-creating-dark" label="creating · THEME_DARK (live)" width={W} height="auto">
+          <ListScreen variant="creating" theme={THEME_DARK} />
         </DCArtboard>
       </DCFamily>
 
